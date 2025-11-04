@@ -1,0 +1,10 @@
+flask
+numpy
+pandas
+matplotlib
+plotly
+ipykernel
+nbformat
+scikit-learn
+flask-cors
+
