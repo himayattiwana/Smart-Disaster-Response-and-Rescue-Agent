@@ -3,7 +3,8 @@ from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from rescue_ai import generate_grid, a_star  
 
-app = Flask(__name__, static_folder='../frontend/build', static_url_path='')
+# Create Flask app with correct static folder path
+app = Flask(__name__, static_folder='frontend/build', static_url_path='')
 
 # Configure CORS
 CORS(app)
@@ -13,11 +14,12 @@ GRID_STATE = None
 AGENT_STATES = []
 ROWS = 12 
 
-# Serve React App
+# Serve React App - This catches all non-API routes
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def serve(path):
-    if path != "" and os.path.exists(app.static_folder + '/' + path):
+    """Serve React App"""
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
         return send_from_directory(app.static_folder, path)
     else:
         return send_from_directory(app.static_folder, 'index.html')
@@ -217,5 +219,11 @@ if __name__ == '__main__':
     # Use environment variables for configuration
     port = int(os.environ.get('PORT', 5000))
     debug = os.environ.get('FLASK_ENV', 'production') == 'development'
+    
+    # Log static folder path for debugging
+    print(f"Static folder: {app.static_folder}")
+    print(f"Static folder exists: {os.path.exists(app.static_folder)}")
+    if os.path.exists(app.static_folder):
+        print(f"Files in static folder: {os.listdir(app.static_folder)}")
     
     app.run(host='0.0.0.0', port=port, debug=debug)
