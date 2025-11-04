@@ -1,40 +1,29 @@
 import os
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from rescue_ai import generate_grid, a_star  
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='../frontend/build', static_url_path='')
 
-# Configure CORS for production
-# Replace "*" with your frontend URL in production
-CORS(app, resources={
-    r"/*": {
-        "origins": "*",  
-        "methods": ["GET", "POST", "OPTIONS"],
-        "allow_headers": ["Content-Type"]
-    }
-})
+# Configure CORS
+CORS(app)
 
 # Global variables
 GRID_STATE = None
 AGENT_STATES = []
 ROWS = 12 
 
-@app.route('/', methods=['GET'])
-def home():
-    """Health check endpoint - shows API is running"""
-    return jsonify({
-        'status': 'running',
-        'message': 'Smart Disaster Response and Rescue Agent API',
-        'version': '1.0',
-        'endpoints': {
-            'health': '/health [GET]',
-            'generate_grid': '/generate_grid [POST]',
-            'move': '/move [POST]'
-        }
-    }), 200
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(app.static_folder + '/' + path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
-@app.route('/health', methods=['GET'])
+# API Routes
+@app.route('/api/health', methods=['GET'])
 def health():
     """Health check for monitoring"""
     return jsonify({
@@ -42,7 +31,7 @@ def health():
         'service': 'disaster-response-api'
     }), 200
 
-@app.route('/generate_grid', methods=['POST'])
+@app.route('/api/generate_grid', methods=['POST'])
 def generate_grid_route():
     global GRID_STATE, AGENT_STATES
 
@@ -119,7 +108,7 @@ def generate_grid_route():
         }), 500
 
 
-@app.route('/move', methods=['POST'])
+@app.route('/api/move', methods=['POST'])
 def move_agents():
     global GRID_STATE, AGENT_STATES
 

@@ -1,20 +1,40 @@
-# Use Python 3.11 slim image
+# Multi-stage build
+# Stage 1: Build React frontend
+FROM node:18-alpine AS frontend-build
+
+WORKDIR /frontend
+
+# Copy frontend package files
+COPY frontend/package*.json ./
+
+# Install dependencies
+RUN npm install
+
+# Copy frontend source
+COPY frontend/ ./
+
+# Build React app
+RUN npm run build
+
+# Stage 2: Python backend with built frontend
 FROM python:3.11-slim
 
-# Set working directory
 WORKDIR /app
 
-# Copy backend requirements first (for better caching)
-COPY backend/requirements.txt .
+# Copy backend requirements
+COPY backend/requirements.txt ./
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Copy backend code
-COPY backend/ .
+COPY backend/ ./
 
-# Expose port (Render will set PORT env var)
+# Copy built frontend from previous stage
+COPY --from=frontend-build /frontend/build ./frontend/build
+
+# Expose port
 EXPOSE 10000
 
 # Run gunicorn
